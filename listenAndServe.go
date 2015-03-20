@@ -58,9 +58,13 @@ func serve(c net.Conn, mb *messageBus) {
 	}()
 	curmsg := 0
 	for {
-		sig := <-mb.closeChanFactory
-		<-sig
-		for _, v := range mb.get(curmsg) {
+		mb.wait()
+		for {
+			v := mb.get(curmsg) // exhaust the queue
+			if v == nil {
+				curmsg-- // went too far
+				break
+			}
 			fmt.Println("msg", string(v))
 			curmsg++
 			_, err := c.Write(v)
